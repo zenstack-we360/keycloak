@@ -60,7 +60,7 @@ function Keycloak (config) {
         callbackStorage = createCallbackStorage();
         var adapters = ['default', 'cordova', 'cordova-native'];
 
-        if (initOptions && adapters.indexOf(initOptions.adapter) > -1) {
+        if (initOptions && adapters.indexOf(initOptions.adapter) > -1 || initOptions.adapter?.type === 'idp') {
             adapter = loadAdapter(initOptions.adapter);
         } else if (initOptions && typeof initOptions.adapter === "object") {
             adapter = initOptions.adapter;
@@ -1398,11 +1398,11 @@ function Keycloak (config) {
             };
         }
 
-        if (type.type == "idp") {
+        if (type?.type == "idp") {
           return {
             login: function (options) {
               window.location.assign(
-                kc.createLoginUrl({ ...options, idpHint: type.idpHint }),
+                kc.createLoginUrl({ ...options, idpHint: type?.idpHint }),
               );
               return createPromise().promise;
             },
