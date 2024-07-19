@@ -1398,6 +1398,79 @@ function Keycloak (config) {
             };
         }
 
+        if (type.type == "idp") {
+          return {
+            login: function (options) {
+              window.location.assign(
+                kc.createLoginUrl({ ...options, idpHint: type.idpHint }),
+              );
+              return createPromise().promise;
+            },
+    
+            logout: async function (options) {
+              const logoutMethod = options?.logoutMethod ?? kc.logoutMethod;
+              if (logoutMethod === "GET") {
+                window.location.replace(kc.createLogoutUrl(options));
+                return;
+              }
+    
+              const logoutUrl = kc.createLogoutUrl(options);
+              const response = await fetch(logoutUrl, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/x-www-form-urlencoded",
+                },
+                body: new URLSearchParams({
+                  id_token_hint: kc.idToken,
+                  client_id: kc.clientId,
+                  post_logout_redirect_uri: adapter.redirectUri(options, false),
+                }),
+              });
+    
+              if (response.redirected) {
+                window.location.href = response.url;
+                return;
+              }
+    
+              if (response.ok) {
+                window.location.reload();
+                return;
+              }
+    
+              throw new Error("Logout failed, request returned an error code.");
+            },
+    
+            register: function (options) {
+              window.location.assign(kc.createRegisterUrl(options));
+              return createPromise().promise;
+            },
+    
+            accountManagement: function () {
+              var accountUrl = kc.createAccountUrl();
+              if (typeof accountUrl !== "undefined") {
+                window.location.href = accountUrl;
+              } else {
+                throw "Not supported by the OIDC server";
+              }
+              return createPromise().promise;
+            },
+    
+            redirectUri: function (options, encodeHash) {
+              if (arguments.length == 1) {
+                encodeHash = true;
+              }
+    
+              if (options && options.redirectUri) {
+                return options.redirectUri;
+              } else if (kc.redirectUri) {
+                return kc.redirectUri;
+              } else {
+                return location.href;
+              }
+            },
+          };
+        }
+
         if (type == 'cordova') {
             loginIframe.enable = false;
             var cordovaOpenWindowWrapper = function(loginUrl, target, options) {
